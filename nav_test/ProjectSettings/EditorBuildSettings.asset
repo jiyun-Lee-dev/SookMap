@@ -5,7 +5,13 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/MS_floor_3.unity
     guid: ef0eb1a8b04432a40b69f0927f09e0eb
+  - enabled: 1
+    path: Assets/Scenes/Start.unity
+    guid: 004c0bc70dbb0a5469f449aec0b7892f
+  - enabled: 0
+    path: 
+    guid: 00000000000000000000000000000000
   m_configObjects: {}

@@ -7,6 +7,10 @@ TagManager:
   - destination
   - stair
   - elevator
+  - stopover
+  - Destinations
+  - Map
+  - start
   layers:
   - Default
   - TransparentFX

@@ -37,6 +37,7 @@ public class UpdateNavigation : MonoBehaviour
     //what to do when entering a collider
     private void OnTriggerEnter(Collider other)
     {
+
         Debug.Log("Entered collider");
         //if it is a navTrigger then caculate angle and spawn a new AR arrow
         if (other.name.Equals("NavTrigger(Clone)") && line.positionCount > 0)

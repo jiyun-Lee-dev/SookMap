@@ -1,8 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using GoogleARCore;
-using UnityEngine.UI;
+using UnityEngine.AI;
 using System;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -11,69 +12,118 @@ public class SetPositions : MonoBehaviour
 {
     public GameObject ardevice;
     public GameObject person;
-    //public GameObject controller;
+    public GameObject map;
     public GameObject calibrationLocations;
+    public NavMeshSurface surface;
+
     public NavigationController naviCtrl;
     public GameObject trigger; // trigger to spawn and despawn AR arrows
+
     public ParsePath parse_path;
-    
+
+    static string tagStopOver = "stopover";
+    static string tagDestination = "destination";
+
     // Start is called before the first frame update
     void Start()
     {
         naviCtrl = GameObject.Find("PathShower").GetComponent<NavigationController>();
-        parse_path = GameObject.Find("ParsePath").GetComponent<ParsePath>();
         // 원래는 안드에서 오브젝트 이름 받아와야 하는데 일단 임의로 집어넣음.
-        set_positions("304/321");
+        //set_positions("room_MS_4_405B/room_MS_3_321");
     }
 
     // Update is called once per frame
     void Update()
     {
-
     }
-
-    public void set_positions(string positions_str)
+    
+    public void init_set_positions()
     {
-        string[] positions = positions_str.Split('/');
-        string currentPos = positions[0];
-        string destPos = positions[1];
-        /*
-        // 출발지와 목적지 값을 parse_path 함수에 넘겨주면서 호출
-        // 경로 파싱 후 destinations[] 리턴 받고 나서 이제 NavController의 set_destinations를 호출하는 거임.
-        // destinations에는 오브젝트들의 이름(string)이 들어가 있으면 될듯. 지금 suengeun이 리턴받은 배열이라고 가정함.
-        */
+        string currentPos = parse_path.destinations[parse_path.destIndex - 1];
+        string nextPos = parse_path.destinations[parse_path.destIndex];
 
+        string[] currentPos_arr = currentPos.Split('_');
+        string current_building = currentPos_arr[1];
+        string current_floor = currentPos_arr[2];
+        string currentMap_name = current_building + "_floor_" + current_floor;
+        GameObject currentObject = GameObject.Find(currentPos);
 
-        // 리턴 받은 배열을 temp 배열에 넣어줌
-        String[] temp = new String[10];
-        temp = (String[])parse_path.parsing(currentPos, destPos).Clone();
         /*
         for (int i= 0; i <temp.Length; i++)
         {
             Debug.Log("parsing result: " + temp[i]);
         }
         */
-        
-        // 1개 이상의 목적지가 있는지 체크
-        if (temp[0] != "")
+
+        // 1개 이상의 목적지가 있는지 체크할 필요 없을 거 같음 setPos 호출 시에 예외처리하니까
+        this.setPersonPos(currentPos);
+        this.setTag();
+        this.callNavCtrl();
+    }
+
+    public void set_positions(string pos)
+    {
+        this.setPersonPos(pos);
+        this.setTag();
+        this.callNavCtrl();
+    }
+
+    // personIndicator 원하는 지점으로 위치 이동
+    public void setPersonPos(string pos)
+    {
+        foreach (Transform child in calibrationLocations.transform)
         {
-            // personIndicator 출발지로 위치 설정
-            foreach (Transform child in calibrationLocations.transform)
+            if (child.name.Equals(pos))
             {
-                if (child.name.Equals(currentPos))
-                {
-                    person.transform.position = child.transform.position;
-                    break;
-                }
-
+                person.transform.position = child.transform.position;
+                break;
             }
-            // navigationController스크립트의 destinations[]를 대입해주고, navigationController에 있는 setDestinations 함수 호출
-            naviCtrl.destinations = (String[])temp.Clone();
-            naviCtrl.setDestination(0);
-            ardevice.GetComponent<ARCoreSession>().enabled = true;
-            this.gameObject.SetActive(false);
         }
+    }
 
-        return;
+    public void setTag()
+    {
+        // 다음 dest는 경유지
+        if (parse_path.destinations[parse_path.destIndex + 1] != "" && parse_path.destIndex < 10)
+            GameObject.Find(parse_path.destinations[parse_path.destIndex]).tag = tagStopOver;
+        else
+            GameObject.Find(parse_path.destinations[parse_path.destIndex]).tag = tagDestination;
+        Debug.Log("SetTag: " + GameObject.Find(parse_path.destinations[parse_path.destIndex]).name);
+        Debug.Log("SetTag: " + GameObject.Find(parse_path.destinations[parse_path.destIndex]).tag);
+    }
+
+    public void set_Map_and_Destinations(string currentMap_name)
+    {
+        // 이전의 인스턴스는 삭제
+        if (GameObject.FindGameObjectWithTag("Map"))
+            Destroy(GameObject.FindGameObjectWithTag("Map"));
+        if (GameObject.FindGameObjectWithTag("Destinations"))
+            Destroy(GameObject.FindGameObjectWithTag("Destinations"));
+
+        // 해당 층의 프리팹으로 map이랑 dest 인스턴스화
+        map = Instantiate(Resources.Load("Map/" + currentMap_name)) as GameObject;
+        calibrationLocations = Instantiate(Resources.Load("Destinations/" + currentMap_name + "_Destinations")) as GameObject;
+
+        // navmesh 생성
+        if (surface.navMeshData != null)
+            surface.UpdateNavMesh(surface.navMeshData);
+        else
+            surface.BuildNavMesh();
+        
+        // dest 오브젝트들 안 보이게 설정
+        MeshRenderer[] allChildren = calibrationLocations.GetComponentsInChildren<MeshRenderer>();
+        foreach (MeshRenderer child in allChildren)
+        {
+            child.enabled = false;
+        }
+    }
+
+    // navigationController스크립트의 destinations[]를 대입해주고, navigationController에 있는 setDestinations 함수 호출
+    public void callNavCtrl()
+    {
+        Debug.Log("악");
+        naviCtrl.destinations = (String[])parse_path.destinations.Clone();
+        naviCtrl.setDestination(parse_path.destIndex);
+        ardevice.GetComponent<ARCoreSession>().enabled = true;
     }
 }

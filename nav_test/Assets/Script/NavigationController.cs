@@ -7,10 +7,7 @@ using UnityEngine.UI;
 //class that handles all navigation
 public class NavigationController : MonoBehaviour
 {
-    //public GameObject Arrow;
-    //public GameObject ARcamera;
-
-    public GameObject calibrationLocations;
+    public SetPositions setPos;
     public GameObject trigger;
     public string[] destinations; // list of destination positions
     public Transform target = null; // current choosen destination
@@ -20,7 +17,6 @@ public class NavigationController : MonoBehaviour
     private NavMeshPath path; // current calculated path
     private LineRenderer line; // linerenderer to display path
 
-    //public Dropdown dropdown; // dropdown of destinations
     private bool destinationSet; // bool to say if a destination is set
 
 
@@ -29,12 +25,8 @@ public class NavigationController : MonoBehaviour
     {
         path = new NavMeshPath();
         line = transform.GetComponent<LineRenderer>();
-        //PopulateList();
         destinationSet = false;
-
-        //내가 넣은 코드
-        //GameObject newArrow = GameObject.Instantiate(Arrow) as GameObject;
-        //newArrow.transform.parent = ARcamera.transform; 
+        
      }
 
     // Update is called once per frame
@@ -56,7 +48,6 @@ public class NavigationController : MonoBehaviour
             line.positionCount = path.corners.Length;
             line.SetPositions(path.corners);
             line.enabled = true;
-
         }
     }
 
@@ -64,7 +55,7 @@ public class NavigationController : MonoBehaviour
     public void setDestination(int index) 
     {
         string destPos = destinations[index];
-        foreach (Transform child in calibrationLocations.transform)
+        foreach (Transform child in setPos.calibrationLocations.transform)
         {
             if (child.name.Equals(destPos))
             {
@@ -73,55 +64,6 @@ public class NavigationController : MonoBehaviour
             }
         }
         GameObject.Instantiate(trigger, person.transform.position, person.transform.rotation);
-    }
-
-     //fill dropdown
-    /*private void PopulateList()
-    {
-        List<string> names = new List<string>();
-        names.Add("Choose a destination..");
-        foreach (Transform dest in destinations)
-        {
-            names.Add(dest.name);
-        }
-        dropdown.AddOptions(names);
-    }
-
-    // dropdown listener
-    public void DropdownIndexChanged(int index)
-    {
-        if (index == 0 && !destinationSet)
-        {
-            target = null;
-            line.positionCount = 0;
-        }
-        else
-        {
-            if (destinationSet)
-            {
-                RemoveArrowAndCollider();
-                setDestination(index);
-            }
-            else
-            {
-                dropdown.options.RemoveAt(0);
-                dropdown.SetValueWithoutNotify(index - 1);
-                setDestination(index - 1);
-            }
-            destinationSet = true;
-        }
-    }*/
-
-    // clear button listener, delete current destination and repopulate dropdown
-    public void Clear()
-    {
-        target = null;
-        line.positionCount = 0;
-        //dropdown.ClearOptions();
-        //PopulateList();
-        //dropdown.SetValueWithoutNotify(0);
-        RemoveArrowAndCollider();
-        destinationSet = false;
     }
 
     // remove AR arrow when path is cleared
